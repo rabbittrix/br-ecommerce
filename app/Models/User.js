@@ -21,7 +21,15 @@ class User extends Model {
     })
   }
 
-  static get traits () {
+
+  /**
+  * Hides the fields defined in the return, from queries in the DB
+  */
+  static get hidden() {
+    return ['password']
+  }
+
+static get traits () {
     return [
       '@provider:Adonis/Acl/HasRole',
       '@provider:Adonis/Acl/HasPermission'
@@ -40,6 +48,14 @@ class User extends Model {
    */
   tokens () {
     return this.hasMany('App/Models/Token')
+  }
+
+  image(){
+    return this.belongsTo('App/Models/Image')
+  }
+
+  coupons(){
+    return this.belongsToMany('App/Models/Coupon')
   }
 }
 
