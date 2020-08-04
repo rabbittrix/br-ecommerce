@@ -26,4 +26,57 @@ const Helpers = use('Helpers')
    return string
  }
 
+ /**
+ * Generate single upload
+ *
+ * @param {FileJar} file
+ * @param {string} path
+ * @return {Object<FileJar>}
+ */
+const manage_single_upload = async (file, path = null) => {
+  path = path ? path : Helpers.publicPath('uploads')
+  const random_name = await str_random(30)
+  let filename = `${new Date().getTime()}-${random_name}.${file.subtype}`
+
+  await file.move(path, {
+    name: filename
+  })
+  return file
+}
+
+
+ /**
+ * Generate multiple upload
+ *
+ * @param {FileJar} fileJar
+ * @param {string} path
+ * @return {Object}
+ */
+const manage_multiple_upload = async (file, path = null) => {
+  path = path ? path : Helpers.publicPath('uploads')
+  let successes = [],
+  errors = []
+
+  await Promise.all(
+    fileJar.files.map(async file => {
+      let random_name = await str_random(30)
+      let filename = `${new Date().getTime()}-${random_name}.${file.subtype}`
+
+    //move file
+    await file.move(path, {
+      name: filename
+    })
+
+    //confirmation if move file
+    if(file.moved()){
+      successes.push(file)
+    }else{
+      errors.push(file.error())
+    }
+  }))
+
+  return {successes, errors}
+
+}
+
  module.exports = {str_random}
