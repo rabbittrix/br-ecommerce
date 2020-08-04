@@ -48,7 +48,6 @@ class CategoryController {
       return response.status(400).send({
         message: 'Error processing your request!'
       })
-
     }
   }
 
