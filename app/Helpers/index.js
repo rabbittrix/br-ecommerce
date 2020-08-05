@@ -52,7 +52,7 @@ const manage_single_upload = async (file, path = null) => {
  * @param {string} path
  * @return {Object}
  */
-const manage_multiple_upload = async (file, path = null) => {
+const manage_multiple_uploads = async (file, path = null) => {
   path = path ? path : Helpers.publicPath('uploads')
   let successes = [],
   errors = []
@@ -79,4 +79,4 @@ const manage_multiple_upload = async (file, path = null) => {
 
 }
 
- module.exports = {str_random}
+ module.exports = {str_random, manage_single_upload, manage_multiple_uploads}
