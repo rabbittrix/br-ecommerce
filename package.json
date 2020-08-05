@@ -13,7 +13,7 @@
     "adonisjs",
     "adonis-app"
   ],
-  "author": "",
+  "author": "Roberto de Souza",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
