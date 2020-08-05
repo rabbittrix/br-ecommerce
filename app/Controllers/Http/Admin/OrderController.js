@@ -7,6 +7,8 @@
 const Order = use('App/Models/Order')
 const Database = use('Database')
 const Service = use('App/Services/Order/OrderService')
+const Coupon = use('App/Models/Coupon')
+const Discount = use('App/Models/Discount')
 
 /**
  * Resourceful controller for interacting with orders
@@ -132,6 +134,42 @@ class OrderController {
       })
     }
   }
+
+  async applyDiscount ({ params: {id}, request, response }){
+    const {code} = request.all()
+    const coupon = await Coupon.findByOrFail('code', code.toUpperCase())
+    const order = await Order.findOrFail(id)
+    var discount, info = {}
+    try {
+      const service = new Service(order)
+      const canAddDiscount = await service.canApplyDiscount(coupon)
+      const orderDiscounts = await order.coupons().getCount()
+
+      const canApplyToOrder = orderDiscounts < 1 || (orderDiscounts >= 1 && coupon.recursive)
+      if(canAddDiscount && canApplyToOrder){
+        discount = await Discount.findOrCreate({
+          order_id: order.id,
+          coupon_id: coupon.id
+        })
+        info.message = 'Success apply coupon'
+        info.success = true
+      }else {
+        info.message = 'Error apply coupon'
+        info.success = false
+      }
+      return response.send({order, info})
+    } catch (error) {
+      return response.status(400).send({message: 'Error apply coupon'})
+    }
+  }
+
+  async removeDiscount ({request, response }){
+    const {discount_id} = request.all()
+    const discount = await Discount.findOrFail(discount_id)
+    await discount.delete()
+    return response.status(204).send({message: 'Discount success removed'})
+  }
+
 }
 
 module.exports = OrderController
