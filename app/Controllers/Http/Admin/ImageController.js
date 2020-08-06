@@ -9,6 +9,7 @@ const Helpers = require('../../../Helpers')
 const Image = use('App/Models/Image')
 const {manage_single_upload, manage_multiple_uploads} = use('App/Helpers')
 const fs = use('fs')
+const Transformer = use('App/Transformers/Admin/ImageTransformer')
 
 /**
  * Resourceful controller for interacting with images
@@ -19,12 +20,13 @@ class ImageController {
    * GET images
    *
    * @param {object} ctx
-   * @param {Request} ctx.request
+   * @param {TransformWith} ctx.transform
    * @param {Response} ctx.response
-   * @param {View} ctx.pagination
+   * @param {object} ctx.pagination
    */
-  async index ({ response, pagination }) {
-    const images = await Image.query().orderBy('id', 'DESC').paginate(pagination.page, pagination.limit)
+  async index ({ response, pagination, transform }) {
+    var images = await Image.query().orderBy('id', 'DESC').paginate(pagination.page, pagination.limit)
+    images = await transform.paginate(images, Transformer)
     return response.send(images)
   }
 
@@ -35,8 +37,9 @@ class ImageController {
    * @param {object} ctx
    * @param {Request} ctx.request
    * @param {Response} ctx.response
+   * @param {TransformWith} ctx.transform
    */
-  async store ({ request, response }) {
+  async store ({ request, response, transform }) {
     try {
       const fileJar = request.file('images',{
         types: ['image'],
@@ -44,7 +47,7 @@ class ImageController {
       })
 
       let images = []
-      if(!fileJar.file){
+      if(!fileJar.files){
         const file = await manage_single_upload(fileJar)
         if(file.moved()){
           const image = await Image.create({
@@ -55,16 +58,17 @@ class ImageController {
           })
 
           images.push(image)
-          return response.status(201).send({successes: images, errors: {}})
+          images = await transform.collection(images, Transformer)
+          return response.status(201).send({success: images, errors: {}})
         }
 
-        return response.status(400).send({
+        return response.status(500).send({
           message: 'Error processing your image !'
         })
       }
-        let file = await manage_multiple_uploads(fileJar)
+        let files = await manage_multiple_uploads(fileJar)
         await Promise.all(
-          files.successes.map(async files => {
+          files.successes.map(async file => {
             const image = await Image.create({
               path: file.fileName,
               size: file.size,
@@ -74,10 +78,11 @@ class ImageController {
             images.push(image)
           })
         )
+        images = await transform.collection(images, Transformer)
         return response.status(201).send({successes: images, errors: files.error})
 
     } catch (error) {
-      return response.status(400).send({
+      return response.status(500).send({
         message: 'Error processing your image !'
       })
 
@@ -95,7 +100,7 @@ class ImageController {
    */
   async show ({ params: {id}, request, response, view }) {
     const image = await Image.findOrFail(id)
-    return response.send(image)
+    return response.send(await transform.item(image, Transformer))
   }
 
   /**
@@ -111,9 +116,9 @@ class ImageController {
     try {
       image.merge(request.only(['original_name']))
       await image.save()
-      response.status(200).send(image)
+      return response.status(200).send(await transform.item(image, Transformer))
     } catch (error) {
-      return response.status(400).send({
+      return response.status(500).send({
         message: 'Error update your image !'
       })
     }
@@ -124,10 +129,9 @@ class ImageController {
    * DELETE images/:id
    *
    * @param {object} ctx
-   * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async destroy ({ params: {id}, request, response }) {
+  async destroy ({ params: {id}, response }) {
     const image = await Image.findOrFail(id)
     try {
       let filepath = Helpers.publicPath(`uploads/${image.path}`)
