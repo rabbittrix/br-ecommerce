@@ -80,7 +80,7 @@ class OrderController {
    */
   async show ({ params: {id}, response, transform }) {
     var order = await Order.findOrFail(id)
-    order = await transform.item(order, Transformer)
+    order = await transform.include('user,items,discounts').item(order, Transformer)
     return response.send(order)
   }
 
@@ -102,7 +102,7 @@ class OrderController {
       await service.updateItems(items)
       await order.save(trx)
       await trx.commit()
-      order = await transform.item(order, Transformer)
+      order = await transform.include('user,items,discounts, coupons').item(order, Transformer)
       return response.send(order)
     } catch (error) {
       await trx.rollback()
