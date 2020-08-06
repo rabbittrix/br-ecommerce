@@ -60,7 +60,8 @@ class OrderController {
         await service.syncItems(items)
       }
       await trx.commit()
-      order = await transform.item(order, Transformer)
+      order = await Order.find(order.id)
+      order = await transform.include('user,items').item(order, Transformer)
       return response.status(201).send(order)
     } catch (error) {
       await trx.rollback()
