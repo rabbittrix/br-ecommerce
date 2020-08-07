@@ -15,4 +15,4 @@
 
 const Ws = use('Ws')
 
-Ws.channel('notification', 'NotificationController').middleware(['auth']) 
+Ws.channel('notifications', 'NotificationController').middleware(['auth'])
