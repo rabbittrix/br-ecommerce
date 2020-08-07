@@ -10,6 +10,7 @@ const Image = use('App/Models/Image')
 const {manage_single_upload, manage_multiple_uploads} = use('App/Helpers')
 const fs = use('fs')
 const Transformer = use('App/Transformers/Admin/ImageTransformer')
+const Helpers = use('Helpers')
 
 /**
  * Resourceful controller for interacting with images
@@ -62,7 +63,7 @@ class ImageController {
           return response.status(201).send({success: images, errors: {}})
         }
 
-        return response.status(500).send({
+        return response.status(400).send({
           message: 'Error processing your image !'
         })
       }
@@ -82,7 +83,7 @@ class ImageController {
         return response.status(201).send({successes: images, errors: files.error})
 
     } catch (error) {
-      return response.status(500).send({
+      return response.status(400).send({
         message: 'Error processing your image !'
       })
 
@@ -118,7 +119,7 @@ class ImageController {
       await image.save()
       return response.status(200).send(await transform.item(image, Transformer))
     } catch (error) {
-      return response.status(500).send({
+      return response.status(400).send({
         message: 'Error update your image !'
       })
     }
